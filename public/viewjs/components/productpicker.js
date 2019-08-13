@@ -211,3 +211,111 @@ $('#product_id_text_input').on('blur', function(e)
 		}
 	}
 });
+
+$("#product_id_text_input")
+	.next(".input-group-append")
+	.append($("<span>").addClass("input-group-text barcode-read-trigger").append(
+		$("<i>").addClass("fas fa-barcode"),
+		$("<div>").addClass("barcode-scrim").append($("<div>").addClass("barcode-preview"))
+	));
+
+$('.barcode-read-trigger').on('click', function(){
+	$(this).find('.barcode-scrim').fadeIn(400, function(){
+		$(this).on("click", function(e){
+			e.stopPropagation();
+			e.preventDefault();
+			$(this).fadeOut();
+			Quagga.stop();
+		});
+	});
+	console.log($(this).find('.barcode-preview')[0]);
+	Quagga.init({
+		inputStream : {
+			name : "Live",
+			type : "LiveStream",
+			target: $(this).find('.barcode-preview')[0],
+			constraints: {
+				facingMode: 'environment'
+			}
+		},
+		decoder : {
+			readers : [
+				// "upc_e_reader",
+				"ean_reader"
+			]
+		},
+		debug: {
+			showCanvas: true,
+			showPatches: true,
+			showFoundPatches: true,
+			showSkeleton: true,
+			showLabels: true,
+			showPatchLabels: true,
+			showRemainingPatchLabels: true,
+			boxFromPatches: {
+				showTransformed: true,
+				showTransformedBox: true,
+				showBB: true
+			}
+		}
+	}, function(err) {
+		if (err) {
+			console.log(err);
+			return
+		}
+		console.log("Initialization finished. Ready to start");
+
+		Quagga.start();
+	});
+	Quagga.onProcessed(function (result) {
+		var drawingCtx = Quagga.canvas.ctx.overlay,
+			drawingCanvas = Quagga.canvas.dom.overlay;
+
+		if (result) {
+			if (result.boxes) {
+				drawingCtx.clearRect(0, 0, parseInt(drawingCanvas.getAttribute("width")), parseInt(drawingCanvas.getAttribute("height")));
+				result.boxes.filter(function (box) {
+					return box !== result.box;
+				}).forEach(function (box) {
+					Quagga.ImageDebug.drawPath(box, { x: 0, y: 1 }, drawingCtx, { color: "green", lineWidth: 2 });
+				});
+			}
+
+			if (result.box) {
+				Quagga.ImageDebug.drawPath(result.box, { x: 0, y: 1 }, drawingCtx, { color: "#00F", lineWidth: 2 });
+			}
+
+			if (result.codeResult && result.codeResult.code) {
+				Quagga.ImageDebug.drawPath(result.line, { x: 'x', y: 'y' }, drawingCtx, { color: 'red', lineWidth: 3 });
+			}
+		}
+	});
+	window.readCode = null;
+	window.readCodeTimes = 0;
+	Quagga.onDetected(function(data){
+		console.log(data.codeResult.code);
+		$("#result").remove();
+		$(document.body).append($("<div id='result'>").text(data.codeResult.code));
+		if(window.readCode === data.codeResult.code){
+			window.readCodeTimes += 1;
+		}
+		else{
+			window.readCode = data.codeResult.code;
+			window.readCodeTimes = 0;
+		}
+		if(window.readCodeTimes > 9){
+			window.navigator.vibrate(200);
+			$("#product_id_text_input").val(data.codeResult.code);
+				$("#product_id_text_input").blur();
+				Quagga.stop();
+				$(".barcode-scrim").fadeOut();
+		}
+		// alert("Found");
+		// if(data) {
+		// 	$("#product_id_text_input").val(data.codeResult.code);
+		// 	$("#product_id_text_input").blur();
+		// 	Quagga.stop();
+		// 	$(".barcode-scrim").fadeOut();
+		// }
+	});
+});

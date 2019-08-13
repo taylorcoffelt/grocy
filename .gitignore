@@ -2,3 +2,5 @@
 /vendor
 /.release
 embedded.txt
+Dockerfile
+docker-compose.yaml

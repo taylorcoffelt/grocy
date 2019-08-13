@@ -1,4 +1,5 @@
 @push('componentScripts')
+	<script src="{{ $U('/node_modules/quagga/dist/quagga.js?v=', true) }}{{ $version }}"></script>
 	<script src="{{ $U('/viewjs/components/productpicker.js', true) }}?v={{ $version }}"></script>
 @endpush
 

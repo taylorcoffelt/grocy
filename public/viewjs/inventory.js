@@ -155,7 +155,7 @@ $('#new_amount').on('focus', function(e)
 	}
 });
 
-$('#inventory-form input').keyup(function (event)
+$('#inventory-form input, #inventory-form select').on("keyup change",function (event)
 {
 	Grocy.FrontendHelpers.ValidateForm('inventory-form');
 });
